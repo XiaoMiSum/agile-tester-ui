@@ -1,27 +1,73 @@
 <template>
   <div class="login-container">
-    <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" auto-complete="on" label-position="left">
-
+    <el-form
+      ref="loginForm"
+      :model="loginForm"
+      :rules="loginRules"
+      class="login-form"
+      auto-complete="on"
+      label-position="left"
+    >
       <div class="title-container">
-        <h3 class="title">Login Form</h3>
+        <h3 class="title">Agile Tester</h3>
       </div>
 
-      <el-form-item prop="username">
+      <el-form-item
+        v-if="!show"
+        prop="email"
+      >
         <span class="svg-container">
-          <svg-icon icon-class="user" />
+          <svg-icon icon-class="email" />
         </span>
         <el-input
-          ref="username"
-          v-model="loginForm.username"
-          placeholder="请输入你的邮箱前缀"
-          name="username"
+          ref="email"
+          v-model="email"
+          placeholder="请输入你的邮箱地址"
+          name="email"
           type="text"
           tabindex="1"
           auto-complete="on"
         />
       </el-form-item>
 
-      <el-form-item prop="password">
+      <el-form-item
+        v-if="show"
+        prop="name"
+      >
+        <span class="svg-container">
+          <svg-icon icon-class="el-icon-user-solid" />
+        </span>
+        <el-input
+          ref="name"
+          v-model="loginForm.name"
+          placeholder="请输入你的名字"
+          name="name"
+          tabindex="2"
+          auto-complete="on"
+        />
+      </el-form-item>
+
+      <el-form-item
+        v-if="show"
+        prop="phone"
+      >
+        <span class="svg-container">
+          <svg-icon icon-class="el-icon-mobile" />
+        </span>
+        <el-input
+          ref="phone"
+          v-model="loginForm.phone"
+          placeholder="请输入你的手机号"
+          name="phone"
+          tabindex="2"
+          auto-complete="on"
+        />
+      </el-form-item>
+
+      <el-form-item
+        v-if="show"
+        prop="password"
+      >
         <span class="svg-container">
           <svg-icon icon-class="password" />
         </span>
@@ -34,19 +80,37 @@
           name="password"
           tabindex="2"
           auto-complete="on"
-          @keyup.enter.native="handleLogin"
         />
-        <span class="show-pwd" @click="showPwd">
+        <span
+          class="show-pwd"
+          @click="showPwd"
+        >
           <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
         </span>
       </el-form-item>
 
-      <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">Login</el-button>
+      <el-button
+        v-if="!show"
+        :loading="loading"
+        type="primary"
+        style="width: 100%; margin-bottom: 30px"
+        @click.native.prevent="handleSignIn"
+      >加入敏捷测试</el-button>
+
+      <el-button
+        v-if="show"
+        :loading="loading"
+        type="primary"
+        style="width: 100%; margin-bottom: 30px"
+        @click.native.prevent="handleSignIn"
+      >完善信息并登录</el-button>
 
       <div class="tips">
-        <router-link style="margin-right:20px;" to="/sign-in">没有账号？请注册！</router-link>
+        <router-link
+          style="margin-right: 20px"
+          to="/login"
+        >已有账号？请登录！</router-link>
       </div>
-
     </el-form>
   </div>
 </template>
@@ -72,17 +136,24 @@ export default {
       }
     }
     return {
+      email: '',
       loginForm: {
-        username: 'admin',
-        password: '111111'
+        name: '',
+        phone: '',
+        password: ''
       },
       loginRules: {
-        username: [{ required: true, trigger: 'blur', validator: validateUsername }],
-        password: [{ required: true, trigger: 'blur', validator: validatePassword }]
+        username: [
+          { required: true, trigger: 'blur', validator: validateUsername }
+        ],
+        password: [
+          { required: true, trigger: 'blur', validator: validatePassword }
+        ]
       },
       loading: false,
       passwordType: 'password',
-      redirect: undefined
+      redirect: undefined,
+      show: false
     }
   },
   watch: {
@@ -104,16 +175,22 @@ export default {
         this.$refs.password.focus()
       })
     },
-    handleLogin() {
-      this.$refs.loginForm.validate(valid => {
+    handleSignIn() {
+      this.show = !this.show
+    },
+    handleImproveInfo() {
+      this.$refs.loginForm.validate((valid) => {
         if (valid) {
           this.loading = true
-          this.$store.dispatch('user/login', this.loginForm).then(() => {
-            this.$router.push({ path: this.redirect || '/' })
-            this.loading = false
-          }).catch(() => {
-            this.loading = false
-          })
+          this.$store
+            .dispatch('user/signupCheck', this.loginForm)
+            .then(() => {
+              this.$router.push({ path: this.redirect || '/' })
+              this.loading = false
+            })
+            .catch(() => {
+              this.loading = false
+            })
         } else {
           console.log('error submit!!')
           return false
@@ -128,8 +205,8 @@ export default {
 /* 修复input 背景不协调 和光标变色 */
 /* Detail see https://github.com/PanJiaChen/vue-element-admin/pull/927 */
 
-$bg:#283443;
-$light_gray:#fff;
+$bg: #283443;
+$light_gray: #fff;
 $cursor: #fff;
 
 @supports (-webkit-mask: none) and (not (cater-color: $cursor)) {
@@ -172,14 +249,15 @@ $cursor: #fff;
 </style>
 
 <style lang="scss" scoped>
-$bg:#2d3a4b;
-$dark_gray:#889aa4;
-$light_gray:#eee;
+$bg: #2d3a4b;
+$dark_gray: #889aa4;
+$light_gray: #eee;
 
 .login-container {
   min-height: 100%;
   width: 100%;
   background-color: $bg;
+  background-image: url("../../assets/background/bg.jpg");
   overflow: hidden;
 
   .login-form {
@@ -193,7 +271,7 @@ $light_gray:#eee;
 
   .tips {
     font-size: 14px;
-    color: #fff;
+    color: #409eff;
     margin-bottom: 10px;
     text-align: right;
 
