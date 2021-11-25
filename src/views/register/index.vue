@@ -1,9 +1,9 @@
 <template>
-  <div class="login-container">
+  <div class="login">
     <el-form
-      ref="loginForm"
-      :model="loginForm"
-      :rules="loginRules"
+      ref="registerForm"
+      :model="registerForm"
+      :rules="registerRules"
       class="login-form"
       auto-complete="on"
       label-position="left"
@@ -13,99 +13,92 @@
       </div>
 
       <el-form-item
-        v-if="!show"
         prop="email"
       >
-        <span class="svg-container">
-          <svg-icon icon-class="email" />
-        </span>
         <el-input
           ref="email"
           v-model="email"
+          :disabled="show"
           placeholder="请输入你的邮箱地址"
           name="email"
           type="text"
           tabindex="1"
           auto-complete="on"
-        />
+        >
+          <svg-icon slot="prefix" icon-class="email" class="el-input__icon input-icon" />
+          <el-button slot="append" :loading="loading" :disabled="show" icon="el-icon-circle-check" @click.native.prevent="handleSignIn">{{ show ? '通过' : '检查' }}</el-button>
+        </el-input>
       </el-form-item>
 
-      <el-form-item
-        v-if="show"
-        prop="name"
-      >
-        <span class="svg-container">
-          <svg-icon icon-class="el-icon-user-solid" />
-        </span>
+      <el-form-item v-if="show" prop="name">
         <el-input
           ref="name"
-          v-model="loginForm.name"
+          v-model="registerForm.name"
           placeholder="请输入你的名字"
           name="name"
           tabindex="2"
           auto-complete="on"
-        />
+        >
+          <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
+        </el-input>
       </el-form-item>
 
-      <el-form-item
-        v-if="show"
-        prop="phone"
-      >
-        <span class="svg-container">
-          <svg-icon icon-class="el-icon-mobile" />
-        </span>
+      <el-form-item v-if="show" prop="teamId">
+        <el-select
+          ref="teamId"
+          v-model="registerForm.teamId"
+          name="teamId"
+          tabindex="3"
+          auto-complete="on"
+          placeholder="请选择你的团队"
+        >
+          <el-option
+            v-for="item in options"
+            :key="item.key"
+            :label="item.value"
+            :value="item.key"
+          />
+
+          <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
+        </el-select>
+      </el-form-item>
+
+      <el-form-item v-if="show" prop="phone">
         <el-input
           ref="phone"
-          v-model="loginForm.phone"
+          v-model="registerForm.phone"
           placeholder="请输入你的手机号"
           name="phone"
-          tabindex="2"
+          tabindex="4"
           auto-complete="on"
-        />
+        >
+          <i slot="prefix" class="el-icon-mobile-phone" />
+        </el-input>
       </el-form-item>
 
-      <el-form-item
-        v-if="show"
-        prop="password"
-      >
-        <span class="svg-container">
-          <svg-icon icon-class="password" />
-        </span>
+      <el-form-item v-if="show" prop="password">
         <el-input
-          :key="passwordType"
           ref="password"
-          v-model="loginForm.password"
-          :type="passwordType"
+          v-model="registerForm.password"
+          type="password"
           placeholder="请输入你的登录密码"
           name="password"
-          tabindex="2"
+          tabindex="5"
           auto-complete="on"
-        />
-        <span
-          class="show-pwd"
-          @click="showPwd"
         >
-          <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
-        </span>
+          <svg-icon slot="prefix" icon-class="password" />
+        </el-input>
       </el-form-item>
-
-      <el-button
-        v-if="!show"
-        :loading="loading"
-        type="primary"
-        style="width: 100%; margin-bottom: 30px"
-        @click.native.prevent="handleSignIn"
-      >加入敏捷测试</el-button>
 
       <el-button
         v-if="show"
         :loading="loading"
         type="primary"
         style="width: 100%; margin-bottom: 30px"
-        @click.native.prevent="handleSignIn"
+        @click.native.prevent="handleImproveInfo"
       >完善信息并登录</el-button>
 
-      <div class="tips">
+      <div v-if="!show" class="tips">
         <router-link
           style="margin-right: 20px"
           to="/login"
@@ -116,76 +109,76 @@
 </template>
 
 <script>
-import { validUsername } from '@/utils/validate'
+import { getTeamOptions } from '@/api/team'
 
 export default {
-  name: 'Login',
+  name: 'Signup',
   data() {
-    const validateUsername = (rule, value, callback) => {
-      if (!validUsername(value)) {
-        callback(new Error('Please enter the correct user name'))
+    const validateName = (rule, value, callback) => {
+      if (!value || value === '') {
+        callback(new Error('请输入你的名字'))
       } else {
         callback()
       }
     }
     const validatePassword = (rule, value, callback) => {
-      if (value.length < 6) {
-        callback(new Error('The password can not be less than 6 digits'))
+      if (value.length < 10) {
+        callback(new Error('登录密码长度必须大于等于10'))
+      } else {
+        callback()
+      }
+    }
+    const validateTeam = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error('请选择你所在的团队'))
       } else {
         callback()
       }
     }
     return {
       email: '',
-      loginForm: {
+      registerForm: {
         name: '',
         phone: '',
         password: ''
       },
-      loginRules: {
-        username: [
-          { required: true, trigger: 'blur', validator: validateUsername }
+      registerRules: {
+        name: [
+          { required: true, trigger: 'blur', validator: validateName }
         ],
         password: [
           { required: true, trigger: 'blur', validator: validatePassword }
+        ],
+        teamId: [
+          { required: true, trigger: 'blur', validator: validateTeam }
         ]
       },
       loading: false,
       passwordType: 'password',
-      redirect: undefined,
-      show: false
-    }
-  },
-  watch: {
-    $route: {
-      handler: function(route) {
-        this.redirect = route.query && route.query.redirect
-      },
-      immediate: true
+      show: false,
+      options: []
     }
   },
   methods: {
-    showPwd() {
-      if (this.passwordType === 'password') {
-        this.passwordType = ''
-      } else {
-        this.passwordType = 'password'
-      }
-      this.$nextTick(() => {
-        this.$refs.password.focus()
+    handleSignIn() {
+      this.$store.dispatch('user/signupCheck', this.email).then(() => {
+        this.loading = false
+        this.show = true
+        getTeamOptions().then(response => {
+          this.options = response.data
+        })
+      }).catch(() => {
+        this.loading = false
       })
     },
-    handleSignIn() {
-      this.show = !this.show
-    },
     handleImproveInfo() {
-      this.$refs.loginForm.validate((valid) => {
+      this.$refs.registerForm.validate((valid) => {
         if (valid) {
           this.loading = true
           this.$store
-            .dispatch('user/signupCheck', this.loginForm)
+            .dispatch('user/signup', this.registerForm)
             .then(() => {
-              this.$router.push({ path: this.redirect || '/' })
+              this.$router.push('/')
               this.loading = false
             })
             .catch(() => {
@@ -201,74 +194,14 @@ export default {
 }
 </script>
 
-<style lang="scss">
-/* 修复input 背景不协调 和光标变色 */
-/* Detail see https://github.com/PanJiaChen/vue-element-admin/pull/927 */
-
-$bg: #283443;
-$light_gray: #fff;
-$cursor: #fff;
-
-@supports (-webkit-mask: none) and (not (cater-color: $cursor)) {
-  .login-container .el-input input {
-    color: $cursor;
-  }
-}
-
-/* reset element-ui css */
-.login-container {
-  .el-input {
-    display: inline-block;
-    height: 47px;
-    width: 85%;
-
-    input {
-      background: transparent;
-      border: 0px;
-      -webkit-appearance: none;
-      border-radius: 0px;
-      padding: 12px 5px 12px 15px;
-      color: $light_gray;
-      height: 47px;
-      caret-color: $cursor;
-
-      &:-webkit-autofill {
-        box-shadow: 0 0 0px 1000px $bg inset !important;
-        -webkit-text-fill-color: $cursor !important;
-      }
-    }
-  }
-
-  .el-form-item {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    color: #454545;
-  }
-}
-</style>
-
-<style lang="scss" scoped>
-$bg: #2d3a4b;
-$dark_gray: #889aa4;
-$light_gray: #eee;
-
-.login-container {
-  min-height: 100%;
-  width: 100%;
-  background-color: $bg;
+<style rel="stylesheet/scss" lang="scss" scop>
+.login {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
   background-image: url("../../assets/background/bg.jpg");
-  overflow: hidden;
-
-  .login-form {
-    position: relative;
-    width: 520px;
-    max-width: 100%;
-    padding: 160px 35px 0;
-    margin: 0 auto;
-    overflow: hidden;
-  }
-
+  background-size: cover;
   .tips {
     font-size: 14px;
     color: #409eff;
@@ -281,35 +214,77 @@ $light_gray: #eee;
       }
     }
   }
+}
+.title {
+  margin: 0px auto 30px auto;
+  text-align: center;
+  color: #707070;
+}
 
-  .svg-container {
-    padding: 6px 5px 6px 15px;
-    color: $dark_gray;
-    vertical-align: middle;
-    width: 30px;
-    display: inline-block;
-  }
-
-  .title-container {
-    position: relative;
-
-    .title {
-      font-size: 26px;
-      color: $light_gray;
-      margin: 0px auto 40px auto;
-      text-align: center;
-      font-weight: bold;
+.login-form {
+  border-radius: 6px;
+  background: #ffffff;
+  width: 400px;
+  padding: 25px 25px 5px 25px;
+  .el-input {
+    height: 38px;
+    input {
+      height: 38px;
     }
   }
-
-  .show-pwd {
-    position: absolute;
-    right: 10px;
-    top: 7px;
-    font-size: 16px;
-    color: $dark_gray;
-    cursor: pointer;
-    user-select: none;
+  .input-icon {
+    height: 39px;
+    width: 14px;
+    margin-left: 2px;
   }
+  .el-select {
+    width: 100%;
+  }
+}
+.login-tip {
+  font-size: 13px;
+  text-align: center;
+  color: #bfbfbf;
+}
+.login-code {
+  width: 33%;
+  height: 38px;
+  float: right;
+  img {
+    cursor: pointer;
+    vertical-align: middle;
+  }
+}
+.el-login-footer {
+  height: 40px;
+  line-height: 40px;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  color: #fff;
+  font-family: Arial;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.login-code-img {
+  height: 38px;
+}
+.oauth-login {
+  display: flex;
+  cursor:pointer;
+}
+.oauth-login-item {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+}
+.oauth-login-item img {
+  height: 25px;
+  width: 25px;
+}
+.oauth-login-item span:hover {
+  text-decoration: underline red;
+  color: red;
 }
 </style>

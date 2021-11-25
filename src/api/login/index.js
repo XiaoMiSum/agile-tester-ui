@@ -9,8 +9,8 @@ export function signupCheck(email) {
 }
 export function signup(data) {
   return request({
-    url: '/signup-check',
-    method: 'put',
+    url: '/signup',
+    method: 'post',
     data: data
   })
 }
@@ -34,5 +34,12 @@ export function signOut() {
   return request({
     url: '/sign-out',
     method: 'post'
+  })
+}
+
+export function getInfo() {
+  return request({
+    url: '/user-info',
+    method: 'get'
   })
 }

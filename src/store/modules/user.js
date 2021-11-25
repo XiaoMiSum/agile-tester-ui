@@ -1,5 +1,4 @@
-import { login, logout, getInfo } from '@/api/user'
-import { signupCheck } from '@/api/login/login'
+import { signupCheck,signup, getInfo, signIn, signOut } from '@/api/login'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 import { resetRouter } from '@/router'
 
@@ -30,10 +29,9 @@ const mutations = {
 
 const actions = {
   // user login
-  login({ commit }, userInfo) {
-    const { username, password } = userInfo
+  login({ commit }, loginInfo) {
     return new Promise((resolve, reject) => {
-      login({ username: username.trim(), password: password }).then(response => {
+      signIn(loginInfo).then(response => {
         const { data } = response
         commit('SET_TOKEN', data.token)
         setToken(data.token)
@@ -43,13 +41,24 @@ const actions = {
       })
     })
   },
-  // user login
+  // user signup check
   signupCheck({ commit }, email) {
     return new Promise((resolve, reject) => {
       signupCheck(email).then(response => {
         const { data } = response
         commit('SET_TOKEN', data.token)
         setToken(data.token)
+        resolve()
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  },
+
+  // user signup
+  signup({ commit }, data) {
+    return new Promise((resolve, reject) => {
+      signup(data).then(response => {
         resolve()
       }).catch(error => {
         reject(error)
@@ -81,7 +90,7 @@ const actions = {
   // user logout
   logout({ commit, state }) {
     return new Promise((resolve, reject) => {
-      logout(state.token).then(() => {
+      signOut().then(() => {
         removeToken() // must remove  token  first
         resetRouter()
         commit('RESET_STATE')

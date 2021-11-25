@@ -8,7 +8,7 @@ import getPageTitle from '@/utils/get-page-title'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
-const whiteList = ['/login', '/sign-in'] // no redirect whitelist
+const whiteList = ['/login', '/signup'] // no redirect whitelist
 
 router.beforeEach(async(to, from, next) => {
   // start progress bar
@@ -21,7 +21,7 @@ router.beforeEach(async(to, from, next) => {
   const hasToken = getToken()
 
   if (hasToken) {
-    if (to.path === '/login') {
+    if (whiteList.indexOf(to.path) !== -1) {
       // if is logged in, redirect to the home page
       next({ path: '/' })
       NProgress.done()
