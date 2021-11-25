@@ -44,7 +44,18 @@
       </el-form-item>
 
       <el-form-item v-if="show" prop="teamId">
-        <el-select
+        <treeselect
+          v-model="registerForm.teamId"
+          :options="options"
+          :show-count="true"
+          placeholder="请选择你的团队"
+          :normalizer="normalizer"
+        >
+
+          <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
+        </treeselect>
+
+        <!-- <el-select
           ref="teamId"
           v-model="registerForm.teamId"
           name="teamId"
@@ -54,13 +65,13 @@
         >
           <el-option
             v-for="item in options"
-            :key="item.key"
-            :label="item.value"
-            :value="item.key"
+            :key="item.id"
+            :label="item.name"
+            :value="item.id"
           />
 
           <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
-        </el-select>
+        </el-select>-->
       </el-form-item>
 
       <el-form-item v-if="show" prop="phone">
@@ -109,10 +120,14 @@
 </template>
 
 <script>
-import { getTeamOptions } from '@/api/team'
+import Treeselect from '@riophae/vue-treeselect'
+import '@riophae/vue-treeselect/dist/vue-treeselect.css'
+
+import { getTeamList } from '@/api/team'
 
 export default {
   name: 'Signup',
+  components: { Treeselect },
   data() {
     const validateName = (rule, value, callback) => {
       if (!value || value === '') {
@@ -164,8 +179,9 @@ export default {
       this.$store.dispatch('user/signupCheck', this.email).then(() => {
         this.loading = false
         this.show = true
-        getTeamOptions().then(response => {
-          this.options = response.data
+        getTeamList().then(response => {
+          this.options = []
+          this.options.push(...this.handleTree(response.data, 'id'))
         })
       }).catch(() => {
         this.loading = false
@@ -189,6 +205,14 @@ export default {
           return false
         }
       })
+    },
+    // 格式化部门的下拉框
+    normalizer(node) {
+      return {
+        id: node.id,
+        label: node.name,
+        children: node.children
+      }
     }
   }
 }
