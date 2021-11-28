@@ -129,23 +129,9 @@ export default {
   name: 'Signup',
   components: { Treeselect },
   data() {
-    const validateName = (rule, value, callback) => {
-      if (!value || value === '') {
-        callback(new Error('请输入你的名字'))
-      } else {
-        callback()
-      }
-    }
     const validatePassword = (rule, value, callback) => {
       if (value.length < 10) {
         callback(new Error('登录密码长度必须大于等于10'))
-      } else {
-        callback()
-      }
-    }
-    const validateTeam = (rule, value, callback) => {
-      if (!value) {
-        callback(new Error('请选择你所在的团队'))
       } else {
         callback()
       }
@@ -159,13 +145,13 @@ export default {
       },
       registerRules: {
         name: [
-          { required: true, trigger: 'blur', validator: validateName }
+          { required: true, message: '请输入你的姓名', trigger: 'blur' }
         ],
         password: [
           { required: true, trigger: 'blur', validator: validatePassword }
         ],
         teamId: [
-          { required: true, trigger: 'blur', validator: validateTeam }
+          { required: true, message: "'请选择你所在的团队", trigger: 'change' }
         ]
       },
       loading: false,

@@ -10,6 +10,7 @@ import '@/styles/index.scss' // global css
 import App from './App'
 import store from './store'
 import router from './router'
+import $ from 'jquery'
 
 import '@/icons' // icon
 import '@/permission' // permission control
@@ -23,6 +24,26 @@ import {
   addBeginAndEndTime,
   handleTree
 } from '@/utils/index'
+
+/** 思维导图组件相关 */
+require('../node_modules/codemirror/lib/codemirror.js')
+require('../node_modules/codemirror/mode/xml/xml.js')
+require('../node_modules/codemirror/mode/javascript/javascript.js')
+require('../node_modules/codemirror/mode/css/css.js')
+require('../node_modules/codemirror/mode/htmlmixed/htmlmixed.js')
+// require('../node_modules/codemirror/mode/markdown/markdown.js')
+require('../node_modules/codemirror/addon/mode/overlay.js')
+require('../node_modules/codemirror/mode/gfm/gfm.js')
+require('../node_modules/marked/lib/marked.js')
+
+require('../node_modules/kity/dist/kity.js')
+
+// require('../node_modules/hotbox/hotbox.js')
+require('../hotbox/hotbox.js')
+// require('../node_modules/kityminder-core/dist/kityminder.core.js')
+require('../kityminder-core/dist/kityminder.core.js')
+
+require('./script/expose-editor.js')
 
 /** 全局挂载 Element-ui */
 Vue.use(ElementUI)

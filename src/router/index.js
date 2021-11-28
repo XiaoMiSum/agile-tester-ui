@@ -59,7 +59,7 @@ export const constantRoutes = [
       meta: { title: 'Dashboard', icon: 'dashboard' }
     }]
   },
-  
+
   {
     path: '/user',
     component: Layout,
@@ -68,19 +68,56 @@ export const constantRoutes = [
       path: '',
       name: 'User',
       component: () => import('@/views/user/index'),
-      meta: { title: '用户管理', icon: 'user' }
+      meta: { title: '用户', icon: 'user' }
     }]
   },
 
   {
-    path: 'external-link',
+    path: '/team',
     component: Layout,
-    children: [
-      {
-        path: 'https://panjiachen.github.io/vue-element-admin-site/#/',
-        meta: { title: 'External Link', icon: 'link' }
-      }
-    ]
+    redirect: '/team',
+    children: [{
+      path: '',
+      name: 'Team',
+      component: () => import('@/views/team/index'),
+      meta: { title: '团队', icon: 'user' }
+    }]
+  },
+
+  {
+    path: '/product',
+    component: Layout,
+    redirect: '/product',
+    children: [{
+      path: '',
+      name: 'Product',
+      component: () => import('@/views/product/index'),
+      meta: { title: '产品', icon: 'user' }
+    }]
+  },
+
+  {
+    path: '/minder',
+    component: Layout,
+    redirect: '/minder',
+    children: [{
+      path: '',
+      name: 'Minder',
+      component: () => import('@/components/Minder/index'),
+      meta: { title: '脑图', icon: 'user' }
+    }]
+  },
+
+  {
+    path: '/testcase',
+    component: Layout,
+    redirect: '/testcase',
+    children: [{
+      path: '',
+      name: 'Testcase',
+      component: () => import('@/views/testcase/index'),
+      meta: { title: '用例', icon: 'user' }
+    }]
   },
 
   // 404 page must be placed at the end !!!

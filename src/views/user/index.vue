@@ -4,7 +4,7 @@
       <!--部门数据-->
       <el-col :span="4" :xs="24">
         <div class="head-container">
-          <el-input v-model="teamName" placeholder="请输入团队名称" clearable size="small" prefix-icon="el-icon-search" style="margin-bottom: 20px" />
+          <el-input v-model="filterTeam" placeholder="请输入团队名称" clearable size="small" prefix-icon="el-icon-search" style="margin-bottom: 20px" />
         </div>
         <div class="head-container">
           <el-tree
@@ -101,18 +101,54 @@
               {{ scope.row.phone }}
             </template>
           </el-table-column>
+          <el-table-column label="备注信息">
+            <template slot-scope="scope">
+              {{ scope.row.memo }}
+            </template>
+          </el-table-column>
           <el-table-column class-name="status-col" label="状态" width="110" align="center">
             <template slot-scope="scope">
               <el-switch v-model="scope.row.enabled" @change="handleStatusChange(scope.row)" />
             </template>
           </el-table-column>
-          <el-table-column align="center" prop="created_at" label="Display_time" width="200">
+          <el-table-column label="操作" align="center" width="160" class-name="small-padding fixed-width">
             <template slot-scope="scope">
-              <i class="el-icon-time" />
-              <span>{{ scope.row.display_time }}</span>
+              <el-button
+                size="large"
+                type="text"
+                icon="el-icon-edit"
+                @click="handleUpdate(scope.row)"
+              >修改</el-button>
+              <el-dropdown @command="(command) => handleCommand(command, scope.$index, scope.row)">
+                <span class="el-dropdown-link">
+                  更多操作<i class="el-icon-arrow-down el-icon--right" />
+                </span>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item
+                    v-if="scope.row.id !== 1"
+                    command="handleDelete"
+                    size="mini"
+                    type="text"
+                    icon="el-icon-delete"
+                  >删除</el-dropdown-item>
+                  <el-dropdown-item
+                    command="handleResetPwd"
+                    size="mini"
+                    type="text"
+                    icon="el-icon-key"
+                  >重置密码</el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
             </template>
           </el-table-column>
         </el-table>
+        <pagination
+          v-show="total>0"
+          :total="total"
+          :page.sync="queryParams.pageNo"
+          :limit.sync="queryParams.pageSize"
+          @pagination="handleQuery"
+        />
       </el-col>
     </el-row>
 
@@ -160,8 +196,8 @@
 
         <el-row>
           <el-col :span="24">
-            <el-form-item label="备注">
-              <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+            <el-form-item label="备注" prop="memo">
+              <el-input v-model="form.memo" type="textarea" placeholder="请输入备注信息" maxlength="512" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -175,23 +211,35 @@
 </template>
 
 <script>
-import { getList, updateUserStatus } from '@/api/user'
+import Treeselect from '@riophae/vue-treeselect'
+import '@riophae/vue-treeselect/dist/vue-treeselect.css'
+
+import { getList, addUser, updateUser, deleteUser, updateUserStatus, resetPassword } from '@/api/user'
 import { getTeamList } from '@/api/team'
 
 export default {
   name: 'User',
+  components: { Treeselect },
   filters: {
     statusFilter(status) {
       return status ? 'success' : 'danger'
     }
   },
   data() {
+    const validatePassword = (rule, value, callback) => {
+      if (value.length < 10) {
+        callback(new Error('登录密码长度必须大于等于10'))
+      } else {
+        callback()
+      }
+    }
     return {
       /* 表单查询 */
       listLoading: false,
       list: [],
       total: 0,
       queryParams: {
+        name: '',
         teamId: null,
         phone: null,
         enabled: null,
@@ -201,7 +249,7 @@ export default {
       dateRange: [],
       showSearch: true,
       /** 团队树相关 */
-      teamName: '',
+      filterTeam: '',
       teamOptions: [],
       defaultProps: {
         children: 'children',
@@ -211,11 +259,32 @@ export default {
       form: {},
       title: '新增用户',
       open: false,
-      rules: {}
+      rules: {
+        name: [
+          { required: true, message: '用户姓名不能为空', trigger: 'blur' }
+        ],
+        teamId: [
+          { required: true, message: "'请选择所属团队", trigger: 'change' }
+        ],
+        email: [
+          { required: true, type: 'email', message: "'请输入正确的邮箱地址", trigger: ['blur', 'change'] }
+        ],
+        phone: [
+          { pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+        ],
+        password: [
+          { required: true, trigger: 'blur', validator: validatePassword }
+        ]
+      }
+    }
+  },
+  watch: {
+    filterTeam(val) {
+      this.$refs.tree.filter(val)
     }
   },
   created() {
-    this.fetchData()
+    this.handleQuery()
     this.handleGetTeam()
   },
   methods: {
@@ -224,20 +293,54 @@ export default {
       this.list = resp.data.list
       this.total = resp.data.total
     },
+    /** 查询按钮点击 */
     handleQuery() {
       this.fetchData()
     },
-    filterNode(value, data) {
-      if (!value) return true
-      return data.name.indexOf(value) !== -1
+    /** 重置按钮操作 */
+    resetQuery() {
+      this.dateRange = []
+      this.resetForm('queryForm')
+      this.handleQuery()
     },
+    /** 过滤团队 */
+    filterNode(value, data) {
+      return !value ? true : data.name.indexOf(value) !== -1
+    },
+    /** 团队树节点点击 */
     handleNodeClick(data) {
-      console.log(data)
       this.queryParams.teamId = data.id
       this.handleQuery()
     },
-    handleAdd() {},
-    resetQuery() {},
+    /** 新增按钮点击 */
+    handleAdd() {
+      this.reset()
+      // 打开表单，并设置初始化
+      this.form.teamId = this.queryParams.teamId
+      this.open = true
+      this.title = '添加用户'
+    },
+    /** 修改按钮操作 */
+    handleUpdate(row) {
+      this.reset()
+      this.title = '修改用户'
+      const { id, name, memo, teamId, email, phone } = row
+      this.form = { id, name, memo, teamId, email, phone }
+      this.open = true
+    },
+    /** 用户信息表单提交 */
+    submitForm() {
+      this.$refs['form'].validate(valid => {
+        if (!valid) return
+        const func = this.form.id !== undefined ? updateUser : addUser
+        func(this.form).then(response => {
+          this.msgSuccess('操作成功')
+          this.open = false
+          this.handleQuery()
+        })
+      })
+    },
+    /** 更新用户状态 */
     handleStatusChange(row) {
       const text = row.enabled ? '启用' : '停用'
       this.$confirm('确认要将用户 ' + row.name + ' ' + text + '吗?', '警告', {
@@ -260,14 +363,70 @@ export default {
         children: node.children
       }
     },
+    /** 获取团队树 */
     handleGetTeam() {
       getTeamList().then(response => {
         this.teamOptions = []
         this.teamOptions.push(...this.handleTree(response.data, 'id'))
       })
     },
-    cancel() {},
-    submitForm() {}
+    /** 窗口关闭 */
+    cancel() {
+      this.open = false
+      this.reset()
+    },
+    /** 用户信息表单重置 */
+    reset() {
+      this.form = {
+        id: undefined,
+        teamId: undefined,
+        name: undefined,
+        email: undefined,
+        password: undefined,
+        phone: undefined,
+        memo: undefined
+      }
+      this.resetForm('form')
+    },
+    // 更多操作
+    handleCommand(command, index, row) {
+      switch (command) {
+        case 'handleUpdate':
+          this.handleUpdate(row)// 修改客户信息
+          break
+        case 'handleDelete':
+          this.handleDelete(row)// 红号变更
+          break
+        case 'handleResetPwd':
+          this.handleResetPwd(row)
+          break
+        default:
+          break
+      }
+    },
+    handleResetPwd(row) {
+      this.$confirm('确认要重置用户 ' + row.name + ' 的密码吗?', '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(function() {
+        return resetPassword(row.id)
+      }).then(() => {
+        this.msgSuccess('成功重置，新密码已邮件通知该用户')
+      })
+    },
+    handleDelete(row) {
+      this.$confirm('确认删除用户 ' + row.name + ' 吗?', '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(function() {
+        return deleteUser(row.id)
+      }).then(() => {
+        this.msgSuccess('删除成功')
+        this.handleQuery()
+      })
+    }
   }
 }
 </script>

@@ -174,7 +174,7 @@ export function addBeginAndEndTime(params, dateRange, propName) {
  * 构造树型结构数据
  * @param {*} data 数据源
  * @param {*} id id字段 默认 'id'
- * @param {*} pid 父节点字段 默认 'parentId'
+ * @param {*} pid 父节点字段 默认 'pid'
  * @param {*} children 孩子节点字段 默认 'children'
  * @param {*} rootId 根Id 默认 0
  */
